@@ -5,25 +5,40 @@
 namespace day_1 {
 namespace {
 
-
-TEST(DayOneTest, TypicalUseCase){
-  EXPECT_EQ(*GetEncodedNumber("12"), 12);
-  EXPECT_EQ(*GetEncodedNumber("1a2"), 12);
-  EXPECT_EQ(*GetEncodedNumber("a1a2"), 12);
-  EXPECT_EQ(*GetEncodedNumber("a1a2a"), 12);
+TEST(DayOneTests, FindSubstringOffsetWorksForward) {
+  EXPECT_EQ(FindSubstringOffset("ABCDE", "A", SearchDirection::FORWARD), 0);
+  EXPECT_EQ(FindSubstringOffset("ABCDE", "B", SearchDirection::FORWARD), 1);
+  EXPECT_EQ(FindSubstringOffset("ABCDE", "CD", SearchDirection::FORWARD), 2);
+  EXPECT_EQ(FindSubstringOffset("ABCDE", "CDE", SearchDirection::FORWARD), 2);
+  EXPECT_EQ(FindSubstringOffset("ABCDE", "AD", SearchDirection::FORWARD),
+            std::nullopt);
 }
 
-TEST(DayOneTest, NoNumberIsError){
-  EXPECT_EQ(GetEncodedNumber("abc").status().message(),
-            "Failed to find a digit.");
+TEST(DayOneTests, FindSubstringOffsetWorksBackward) {
+  EXPECT_EQ(FindSubstringOffset("ABCDE", "A", SearchDirection::BACKWARD), 4);
+  EXPECT_EQ(FindSubstringOffset("ABCDE", "B", SearchDirection::BACKWARD), 3);
+  EXPECT_EQ(FindSubstringOffset("ABCDE", "CD", SearchDirection::BACKWARD), 1);
+  EXPECT_EQ(FindSubstringOffset("ABCDE", "CDE", SearchDirection::BACKWARD), 0);
+  EXPECT_EQ(FindSubstringOffset("ABCDE", "AD", SearchDirection::BACKWARD),
+            std::nullopt);
 }
 
-TEST(DayOneTest, OnlyOneNumber){
-  EXPECT_EQ(*GetEncodedNumber("a3bc"), 33);
+TEST(DayOneTests, FindFirstWorksForward) {
+  EXPECT_EQ(
+      FindFirst("X1X2X", GetDigitNumberStrings(), SearchDirection::FORWARD), 1);
+
+  EXPECT_EQ(FindFirst("X1XtwoXthreeX4x", GetEnglishNumberStrings(),
+                      SearchDirection::FORWARD),
+            2);
 }
 
-TEST(DayOneTest, ContainsSpaces){
-  EXPECT_EQ(*GetEncodedNumber("       1               2  "), 12);
+TEST(DayOneTests, FindFirstWorksBackward) {
+  EXPECT_EQ(
+      FindFirst("X1X2X", GetDigitNumberStrings(), SearchDirection::BACKWARD),
+      2);
+  EXPECT_EQ(FindFirst("X1XtwoXthreeX4x", GetEnglishNumberStrings(),
+                      SearchDirection::BACKWARD),
+            3);
 }
 
 } // namespace

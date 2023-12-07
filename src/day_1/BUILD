@@ -6,6 +6,7 @@ cc_library(
     "@abseil-cpp//absl/strings",
     "@abseil-cpp//absl/status:statusor",
     "@abseil-cpp//absl/status:status",
+    "@abseil-cpp//absl/container:flat_hash_map",
   ],
 )
 
@@ -24,10 +25,8 @@ cc_binary(
   srcs=["main.cc"],
   deps=[
     ":util",
-    "@abseil-cpp//absl/status:status",
-    "@abseil-cpp//absl/log:log",
-    "@abseil-cpp//absl/log:check",
-    "@abseil-cpp//absl/log:initialize",
+    "@abseil-cpp//absl/flags:flag",
+    "@abseil-cpp//absl/flags:parse",
   ],
 )
 
