@@ -54,12 +54,17 @@ absl::StatusOr<Card> ParseCard(absl::string_view serialized_card) {
     }
     result.your_numbers.insert(num);
   }
+
+  result.num_matches = OverlapSize(result.winning_numbers, result.your_numbers);
+  result.points =
+      result.num_matches == 0 ? 0 : std::pow(2, result.num_matches - 1);
+
   return result;
 }
 
-int OverlapSize(const absl::flat_hash_set<int> &a,
-                const absl::flat_hash_set<int> &b) {
-  int result = 0;
+size_t OverlapSize(const absl::flat_hash_set<int> &a,
+                   const absl::flat_hash_set<int> &b) {
+  size_t result = 0;
   for (const int x : a) {
     if (b.contains(x)) {
       ++result;

@@ -16,12 +16,14 @@ namespace day_4 {
 struct Card {
   absl::flat_hash_set<int> winning_numbers;
   absl::flat_hash_set<int> your_numbers;
+  int points;
+  size_t num_matches;
 };
 
 absl::StatusOr<Card> ParseCard(absl::string_view serialized_card);
 
-int OverlapSize(const absl::flat_hash_set<int> &a,
-                const absl::flat_hash_set<int> &b);
+size_t OverlapSize(const absl::flat_hash_set<int> &a,
+                   const absl::flat_hash_set<int> &b);
 
 } // namespace day_4
 

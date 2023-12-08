@@ -15,16 +15,35 @@ using ::day_4::ParseCard;
 int main(int argc, char **argv) {
   absl::ParseCommandLine(argc, argv);
 
-  int total = 0;
+  std::vector<Card> cards;
+
   std::string serialized_card;
   while (std::getline(std::cin, serialized_card)) {
-    const Card card = *ParseCard(serialized_card);
-    const int overlap = OverlapSize(card.winning_numbers, card.your_numbers);
-    if (overlap == 0) {
-      continue;
-    }
-    total += std::pow(2, overlap - 1);
+    cards.push_back(*ParseCard(serialized_card));
   }
-  std::cout << "Part 1: " << total << std::endl;
+
+  { // Part 1.
+    int total = 0;
+    for (const auto &card : cards) {
+      total += card.points;
+    }
+    std::cout << "Part 1: " << total << std::endl;
+  }
+
+  { // Part 2.
+
+    std::vector<int> card_copies(cards.size(), 1);
+    for (size_t idx = 0; idx < cards.size(); ++idx) {
+      for (size_t offset = 1;
+           offset <= cards[idx].num_matches && idx + offset < cards.size();
+           ++offset) {
+        card_copies[idx + offset] += card_copies[idx];
+      }
+    }
+    std::cout << "Part 2: "
+              << std::accumulate(card_copies.begin(), card_copies.end(), 0)
+              << std::endl;
+  }
+
   return 0;
 }
