@@ -1,5 +1,7 @@
 #include "src/day_3/util.h"
 
+#include "absl/container/flat_hash_map.h"
+#include "absl/container/flat_hash_set.h"
 #include "gmock/gmock-matchers.h"
 #include "gtest/gtest-matchers.h"
 #include "gtest/gtest.h"
@@ -9,6 +11,7 @@ namespace day_3 {
 namespace {
 
 using ::testing::ElementsAre;
+using ::testing::UnorderedElementsAre;
 
 Grid GetTestGrid() {
   return Grid({
@@ -37,7 +40,9 @@ TEST(DayThreeTest, TestGridAtWorks) {
 TEST(DayThreeTest, TestGridVisitAdjacentTilesWorksInCorner) {
   const auto grid = GetTestGrid();
   std::vector<char> adjacent_chars;
-  const auto visit_fn = [&](const char c) { adjacent_chars.push_back(c); };
+  const auto visit_fn = [&](const char c, const Pos &) {
+    adjacent_chars.push_back(c);
+  };
   grid.VisitAdjacentTiles(0, 0, visit_fn);
   EXPECT_THAT(adjacent_chars, ElementsAre('6', '.', '.'));
 }
@@ -45,7 +50,9 @@ TEST(DayThreeTest, TestGridVisitAdjacentTilesWorksInCorner) {
 TEST(DayThreeTest, TestGridVisitAdjacentTilesWorksOnSide) {
   const auto grid = GetTestGrid();
   std::vector<char> adjacent_chars;
-  const auto visit_fn = [&](const char c) { adjacent_chars.push_back(c); };
+  const auto visit_fn = [&](const char c, const Pos &) {
+    adjacent_chars.push_back(c);
+  };
   grid.VisitAdjacentTiles(9, 6, visit_fn);
   EXPECT_THAT(adjacent_chars, ElementsAre('8', '.', '.', '5', '.'));
 }
@@ -71,6 +78,20 @@ TEST(DayThreeTest, TestIsAdjToSymbol) {
   EXPECT_TRUE(grid.IsAdjacentToSymbol(2, 0));
   EXPECT_TRUE(grid.IsAdjacentToSymbol(5, 4));
   EXPECT_FALSE(grid.IsAdjacentToSymbol(1, 6));
+}
+
+TEST(DayThreeTest, PosIsHashable) {
+  absl::flat_hash_map<Pos, int> pos_to_id;
+  pos_to_id[{1, 2}] = 3;
+  EXPECT_EQ(pos_to_id.at({1, 2}), 3);
+}
+
+TEST(DayThreeTest, VisitSymbolWorks) {
+  const auto grid = GetTestGrid();
+  absl::flat_hash_set<Pos> positions;
+  const auto visit_fn = [&](const Pos &pos) { positions.insert(pos); };
+  grid.VisitSymbol('*', visit_fn);
+  EXPECT_THAT(positions, UnorderedElementsAre(Pos{3, 1}, Pos{3, 4}, Pos{5, 8}));
 }
 
 } // namespace

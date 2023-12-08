@@ -12,9 +12,24 @@
 
 namespace day_3 {
 
+struct Pos {
+  int x, y;
+  Pos operator+(const Pos &other) const {
+    return {this->x + other.x, this->y + other.y};
+  }
+  bool operator==(const Pos &other) const {
+    return this->x == other.x && this->y == other.y;
+  }
+  // Make this class hashable.
+  template <typename H> friend H AbslHashValue(H h, const Pos &pos) {
+    return H::combine(std::move(h), pos.x, pos.y);
+  }
+};
+
 struct GridNumber {
   int value = 0;
   bool adjacent_to_symbol = false;
+  std::vector<Pos> tile_locations;
 };
 
 class Grid {
@@ -32,10 +47,20 @@ public:
 
   void VisitNumbers(std::function<void(const GridNumber &)> visit_fn) const;
 
-  void VisitAdjacentTiles(int x, int y,
-                          std::function<void(char)> visit_fn) const;
+  void
+  VisitAdjacentTiles(int x, int y,
+                     std::function<void(char, const Pos &)> visit_fn) const;
+
+  void
+  VisitAdjacentTiles(const Pos &pos,
+                     std::function<void(char, const Pos &)> visit_fn) const {
+    return VisitAdjacentTiles(pos.x, pos.y, visit_fn);
+  }
 
   bool IsAdjacentToSymbol(int x, int y) const;
+
+  void VisitSymbol(char symbol,
+                   std::function<void(const Pos &)> visit_fn) const;
 
 private:
   // Row wise data.

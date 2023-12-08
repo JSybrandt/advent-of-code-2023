@@ -17,6 +17,8 @@ cc_test(
     ":util",
     "@googletest//:gtest",
     "@googletest//:gtest_main",
+    "@abseil-cpp//absl/container:flat_hash_set",
+    "@abseil-cpp//absl/container:flat_hash_map",
   ],
 )
 
@@ -26,6 +28,7 @@ cc_binary(
   deps=[
     ":util",
     "@abseil-cpp//absl/flags:flag",
+    "@abseil-cpp//absl/container:flat_hash_set",
     "@abseil-cpp//absl/flags:parse",
   ],
 )
