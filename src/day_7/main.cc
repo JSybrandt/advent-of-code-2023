@@ -30,6 +30,8 @@ int main(int argc, char **argv) {
     std::sort(hands.begin(), hands.end());
     for (size_t idx = 0; idx < hands.size(); ++idx) {
       uint64_t hand_rank = idx + 1;
+      std::cout << "Hand: " << hands[idx].hand << " : " << hands[idx].bid
+                << " : " << hand_rank << std::endl;
       total += hand_rank * hands[idx].bid;
     }
     std::cout << "Part 1: " << total << std::endl;

@@ -7,6 +7,7 @@
 #include <math.h>
 #include <optional>
 #include <sstream>
+#include <unistd.h>
 #include <utility>
 #include <vector>
 
@@ -67,20 +68,21 @@ std::vector<CardSet> ToOrderedCardSets(const HandOfCards &hand) {
   for (const auto &value : hand) {
     ++card_counts[value];
   }
-  std::vector<CardCount> ordered_counts = {card_counts.begin(),
-                                           card_counts.end()};
-  std::sort(ordered_counts.begin(), ordered_counts.end(), &SortCardCounts);
+  std::vector<CardCount> ordered_card_counts = {card_counts.begin(),
+                                                card_counts.end()};
+  std::sort(ordered_card_counts.begin(), ordered_card_counts.end(),
+            &SortCardCounts);
 
   std::vector<CardSet> card_sets;
-  while (!ordered_counts.empty()) {
-    const auto [current_value, current_count] = ordered_counts.back();
-    ordered_counts.pop_back();
+  while (!ordered_card_counts.empty()) {
+    const auto [current_value, current_count] = ordered_card_counts.back();
+    ordered_card_counts.pop_back();
     // We want a one-set lookahead.
     std::optional<CardValue> next_value;
     std::optional<size_t> next_count;
-    if (!ordered_counts.empty()) {
-      next_value = ordered_counts.back().first;
-      next_count = ordered_counts.back().second;
+    if (!ordered_card_counts.empty()) {
+      next_value = ordered_card_counts.back().first;
+      next_count = ordered_card_counts.back().second;
     }
     switch (current_count) {
     case 5:
@@ -91,7 +93,7 @@ std::vector<CardSet> ToOrderedCardSets(const HandOfCards &hand) {
       break;
     case 3:
       if (next_count == 2) {
-        ordered_counts.pop_back(); // Pop the lookahead.
+        ordered_card_counts.pop_back(); // Pop the lookahead.
         card_sets.push_back(
             {{current_value, *next_value}, SetStrength::FULL_HOUSE});
       } else {
@@ -100,7 +102,7 @@ std::vector<CardSet> ToOrderedCardSets(const HandOfCards &hand) {
       break;
     case 2:
       if (next_count == 2) {
-        ordered_counts.pop_back();
+        ordered_card_counts.pop_back();
         card_sets.push_back(
             {{current_value, *next_value}, SetStrength::TWO_PAIR});
       } else {
@@ -111,6 +113,7 @@ std::vector<CardSet> ToOrderedCardSets(const HandOfCards &hand) {
       card_sets.push_back({{current_value}, SetStrength::HIGH_CARD});
       break;
     default:
+      // This should never happen.
       CHECK(false);
       break;
     }
@@ -170,6 +173,53 @@ ParseHandAndBid(absl::string_view serialized_hand_and_bid) {
         absl::StrCat("Invalid hand and bid:", serialized_hand_and_bid));
   }
   return HandAndBid{*hand, bid};
+}
+
+std::ostream &operator<<(std::ostream &o, const HandOfCards &hand) {
+  for (const auto card : hand) {
+    switch (card) {
+    case CardValue::TWO:
+      o << "2";
+      break;
+    case CardValue::THREE:
+      o << "3";
+      break;
+    case CardValue::FOUR:
+      o << "4";
+      break;
+    case CardValue::FIVE:
+      o << "5";
+      break;
+    case CardValue::SIX:
+      o << "6";
+      break;
+    case CardValue::SEVEN:
+      o << "7";
+      break;
+    case CardValue::EIGHT:
+      o << "8";
+      break;
+    case CardValue::NINE:
+      o << "9";
+      break;
+    case CardValue::TEN:
+      o << "T";
+      break;
+    case CardValue::JACK:
+      o << "J";
+      break;
+    case CardValue::QUEEN:
+      o << "Q";
+      break;
+    case CardValue::KING:
+      o << "K";
+      break;
+    case CardValue::ACE:
+      o << "A";
+      break;
+    }
+  }
+  return o;
 }
 
 } // namespace day_7

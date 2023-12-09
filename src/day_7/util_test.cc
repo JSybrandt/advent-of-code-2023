@@ -52,6 +52,13 @@ TEST(DaySevenTest, ToOrderedCardSetsWorks) {
                   CardSet{.card_values = {CardValue::SIX},
                           .set_strength = SetStrength::HIGH_CARD}));
 
+  EXPECT_THAT(
+      ToOrderedCardSets(*ParseHand("33885")),
+      ElementsAre(CardSet{.card_values = {CardValue::EIGHT, CardValue::THREE},
+                          .set_strength = SetStrength::TWO_PAIR},
+                  CardSet{.card_values = {CardValue::FIVE},
+                          .set_strength = SetStrength::HIGH_CARD}));
+
   EXPECT_THAT(ToOrderedCardSets(*ParseHand("24335")),
               ElementsAre(CardSet{.card_values = {CardValue::THREE},
                                   .set_strength = SetStrength::PAIR},
@@ -82,6 +89,12 @@ TEST(DaySevenTest, CardComparisonWorks) {
   EXPECT_TRUE(*ParseHand("55455") < *ParseHand("K5555"));
   EXPECT_FALSE(*ParseHand("23456") < *ParseHand("65432"));
   EXPECT_TRUE(*ParseHand("23456") == *ParseHand("65432"));
+  EXPECT_TRUE(*ParseHand("TT998") < *ParseHand("TT99K"));
+  EXPECT_TRUE(*ParseHand("TT998") < *ParseHand("TT99K"));
+  EXPECT_TRUE(*ParseHand("TT998") < *ParseHand("TT999"));
+  EXPECT_TRUE(*ParseHand("AAA99") < *ParseHand("AAATT"));
+  EXPECT_TRUE(*ParseHand("AAA98") < *ParseHand("AAATT"));
+  EXPECT_TRUE(*ParseHand("AA9T8") < *ParseHand("AATT9"));
 }
 
 TEST(DaySevenTest, ParseHandAndBidWorks) {

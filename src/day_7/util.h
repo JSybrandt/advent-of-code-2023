@@ -36,6 +36,7 @@ enum class CardValue {
 using HandOfCards = std::array<CardValue, 5>;
 // Order hands by strength.
 bool operator<(const HandOfCards &a, const HandOfCards &b);
+std::ostream &operator<<(std::ostream &o, const HandOfCards &hand);
 absl::StatusOr<HandOfCards> ParseHand(absl::string_view serialized_hand);
 
 enum class SetStrength {
@@ -66,6 +67,7 @@ struct HandAndBid {
   }
   bool operator<(const HandAndBid &other) { return this->hand < other.hand; }
 };
+
 absl::StatusOr<HandAndBid>
 ParseHandAndBid(absl::string_view serialized_hand_and_bid);
 
