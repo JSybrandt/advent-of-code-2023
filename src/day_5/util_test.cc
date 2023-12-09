@@ -84,7 +84,7 @@ TEST(DayFiveTest, MapCategoriesWorks) {
 }
 
 TEST(DayFiveTest, ParseSeedsWorks) {
-  EXPECT_THAT(*ParseInitialSeeds("Seeds: 1 2 33 444"),
+  EXPECT_THAT(*ParseSeedsAsIndependent("Seeds: 1 2 33 444"),
               ElementsAre(1, 2, 33, 444));
 }
 

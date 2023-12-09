@@ -14,7 +14,7 @@
 
 using ::day_5::CategoryMapper;
 using ::day_5::ParseCategoryMapper;
-using ::day_5::ParseInitialSeeds;
+using ::day_5::ParseSeedsAsIndependent;
 using ::day_5::TraverseCategories;
 
 int main(int argc, char **argv) {
@@ -25,7 +25,6 @@ int main(int argc, char **argv) {
     std::cerr << "Failed to get seed line.";
     return 1;
   }
-  std::vector<uint64_t> seeds = *ParseInitialSeeds(serialized_seeds);
 
   // Read one empty line between seeds and mappers.
   std::string line;
@@ -54,14 +53,17 @@ int main(int argc, char **argv) {
   }
   maybe_add_mapper();
 
-  static constexpr absl::string_view kInitialSource = "seed";
-  uint64_t smallest_location = std::numeric_limits<uint64_t>::max();
-  for (const uint64_t seed_idx : seeds) {
-    smallest_location =
-        std::min(smallest_location,
-                 TraverseCategories(seed_idx, kInitialSource, mappers));
+  {
+    std::vector<uint64_t> seeds = *ParseSeedsAsIndependent(serialized_seeds);
+    static constexpr absl::string_view kInitialSource = "seed";
+    uint64_t smallest_location = std::numeric_limits<uint64_t>::max();
+    for (const uint64_t seed_idx : seeds) {
+      smallest_location =
+          std::min(smallest_location,
+                   TraverseCategories(seed_idx, kInitialSource, mappers));
+    }
+    std::cout << "Part 1: " << smallest_location << std::endl;
   }
-  std::cout << "Part 1: " << smallest_location << std::endl;
 
   return 0;
 }

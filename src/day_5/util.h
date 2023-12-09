@@ -79,7 +79,7 @@ absl::StatusOr<CategoryMapper>
 ParseCategoryMapper(const std::vector<std::string> &serialized_category_mapper);
 
 absl::StatusOr<std::vector<uint64_t>>
-ParseInitialSeeds(absl::string_view serialized_seeds);
+ParseSeedsAsIndependent(absl::string_view serialized_seeds);
 
 // Traverses from the initial category through the mappers until no mapper can
 // be found.

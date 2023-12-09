@@ -77,7 +77,7 @@ uint64_t CategoryMapper::operator()(const int64_t source_idx) const {
 }
 
 absl::StatusOr<std::vector<uint64_t>>
-ParseInitialSeeds(absl::string_view serialized_seeds) {
+ParseSeedsAsIndependent(absl::string_view serialized_seeds) {
   std::vector<uint64_t> result;
   std::vector<std::string> tokens = absl::StrSplit(serialized_seeds, ' ');
   // Skip the first token, thats just the word "seeds:".
