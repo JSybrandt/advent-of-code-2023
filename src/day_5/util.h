@@ -14,22 +14,49 @@
 
 namespace day_5 {
 
+struct IndexRange {
+  uint64_t range_start;
+  uint64_t range_length;
+  uint64_t range_end() const { return range_start + range_length; }
+  bool was_remapped_by_interval = false;
+
+  // Print the interval for debugging purposes.
+  friend std::ostream &operator<<(std::ostream &o,
+                                  const IndexRange &index_range) {
+    o << "[" << index_range.range_start << ", "
+      << index_range.range_start + index_range.range_length << ")";
+    if (index_range.was_remapped_by_interval) {
+      o << "*";
+    }
+    return o;
+  }
+  bool operator==(const IndexRange &other) const {
+    return this->range_start == other.range_start &&
+           this->range_length == other.range_length;
+  }
+  // Enable sorting by range_start.
+  bool operator<(const IndexRange &other) const {
+    return this->range_start < other.range_start;
+  }
+};
+
 struct MappingInterval {
   uint64_t source_range_start;
   uint64_t destination_range_start;
   uint64_t range_length;
+  uint64_t source_range_end() const {
+    return source_range_start + range_length;
+  }
 
   bool ContainsSource(const uint64_t source_idx) const {
     return source_range_start <= source_idx &&
            source_idx < source_range_start + range_length;
   }
 
-  uint64_t operator()(int64_t source_idx) const;
+  bool ContainsSourceRange(const IndexRange &index_range) const;
 
-  // Implement < to provide sorting on source_range_start.
-  bool operator<(MappingInterval &other) const {
-    return this->source_range_start < other.source_range_start;
-  }
+  uint64_t Map(int64_t source_idx) const;
+  std::vector<IndexRange> MapRange(const IndexRange &index_range) const;
 
   // Print the interval for debugging purposes.
   friend std::ostream &operator<<(std::ostream &o,
@@ -53,8 +80,8 @@ struct CategoryMapper {
   std::string destination_category;
   // Should be sorted by source_idx.
   std::vector<MappingInterval> intervals;
-  // Maps a source index to the destination.
-  uint64_t operator()(int64_t source_idx) const;
+  uint64_t Map(int64_t source_idx) const;
+  std::vector<IndexRange> MapRange(const IndexRange &index_range) const;
 
   // Print the mapper for debugging purposes.
   friend std::ostream &operator<<(std::ostream &o,
@@ -81,10 +108,18 @@ ParseCategoryMapper(const std::vector<std::string> &serialized_category_mapper);
 absl::StatusOr<std::vector<uint64_t>>
 ParseSeedsAsIndependent(absl::string_view serialized_seeds);
 
+absl::StatusOr<std::vector<IndexRange>>
+ParseSeedsAsRanges(absl::string_view serialized_seeds);
+
 // Traverses from the initial category through the mappers until no mapper can
 // be found.
 uint64_t TraverseCategories(
     uint64_t initial_idx, absl::string_view initial_category,
+    const absl::flat_hash_map<std::string, CategoryMapper> &mappers);
+
+// Passes the initial range through the mappers until the final output ranges.
+std::vector<IndexRange> RangeTraverseCategories(
+    const IndexRange &initial_index_range, absl::string_view initial_category,
     const absl::flat_hash_map<std::string, CategoryMapper> &mappers);
 
 } // namespace day_5

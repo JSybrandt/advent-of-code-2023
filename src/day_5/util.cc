@@ -1,5 +1,6 @@
 #include "src/day_5/util.h"
 
+#include <algorithm>
 #include <cctype>
 #include <iostream>
 #include <vector>
@@ -58,7 +59,7 @@ ParseInterval(absl::string_view serialized_interval) {
   return interval;
 }
 
-uint64_t MappingInterval::operator()(const int64_t source_idx) const {
+uint64_t MappingInterval::Map(const int64_t source_idx) const {
   if (!ContainsSource(source_idx)) {
     return source_idx;
   }
@@ -66,14 +67,58 @@ uint64_t MappingInterval::operator()(const int64_t source_idx) const {
   return destination_range_start + offset;
 }
 
-uint64_t CategoryMapper::operator()(const int64_t source_idx) const {
+bool MappingInterval::ContainsSourceRange(const IndexRange &index_range) const {
+  if (index_range.range_start >= source_range_start + range_length) {
+    return false;
+  }
+  if (index_range.range_start + index_range.range_length <=
+      source_range_start) {
+    return false;
+  }
+  return true;
+}
+
+uint64_t CategoryMapper::Map(const int64_t source_idx) const {
   // Search for the right interval, otherwise just pass thru.
   for (const auto &interval : intervals) {
     if (interval.ContainsSource(source_idx)) {
-      return interval(source_idx);
+      return interval.Map(source_idx);
     }
   }
   return source_idx;
+}
+
+std::vector<IndexRange>
+MappingInterval::MapRange(const IndexRange &index_range) const {
+  if (!ContainsSourceRange(index_range)) {
+    return {index_range};
+  }
+  std::vector<IndexRange> result;
+  // This portion of the interval is before the mapped interval.
+  if (index_range.range_start < source_range_start) {
+    result.push_back(IndexRange{.range_start = index_range.range_start,
+                                .range_length = source_range_start -
+                                                index_range.range_start});
+  }
+
+  // This portion of the interval is within the mapped interval.
+  const uint64_t overlap_start =
+      std::max(source_range_start, index_range.range_start);
+  const uint64_t overlap_end =
+      std::min(source_range_end(), index_range.range_end());
+  const uint64_t start_offset = overlap_start - source_range_start;
+  result.push_back(
+      IndexRange{.range_start = destination_range_start + start_offset,
+                 .range_length = overlap_end - overlap_start,
+                 .was_remapped_by_interval = true});
+
+  // This portion of the interval is after the mapped interval.
+  if (index_range.range_end() > source_range_end()) {
+    result.push_back(IndexRange{.range_start = source_range_end(),
+                                .range_length = index_range.range_end() -
+                                                source_range_end()});
+  }
+  return result;
 }
 
 absl::StatusOr<std::vector<uint64_t>>
@@ -98,10 +143,75 @@ uint64_t TraverseCategories(
   std::string current_category = std::string(initial_category);
   while (mappers.contains(current_category)) {
     const auto &mapper = mappers.at(current_category);
-    current_idx = mapper(current_idx);
+    current_idx = mapper.Map(current_idx);
     current_category = mapper.destination_category;
   }
   return current_idx;
+}
+
+absl::StatusOr<std::vector<IndexRange>>
+ParseSeedsAsRanges(absl::string_view serialized_seeds) {
+  std::vector<IndexRange> result;
+  std::vector<std::string> tokens = absl::StrSplit(serialized_seeds, ' ');
+  // Skip the first token, thats just the word "seeds:".
+  for (size_t idx = 1; idx < tokens.size(); idx += 2) {
+    IndexRange index_range;
+    if (!absl::SimpleAtoi(tokens[idx], &index_range.range_start)) {
+      return absl::InvalidArgumentError("Invalid range_start: " + tokens[idx]);
+    }
+    if (!absl::SimpleAtoi(tokens[idx + 1], &index_range.range_length)) {
+      return absl::InvalidArgumentError("Invalid range_length: " +
+                                        tokens[idx + 1]);
+    }
+    result.push_back(index_range);
+  }
+  return result;
+}
+
+std::vector<IndexRange>
+CategoryMapper::MapRange(const IndexRange &index_range) const {
+  std::vector<IndexRange> source_ranges = {index_range};
+  std::vector<IndexRange> destination_ranges;
+  for (const auto &interval : intervals) {
+    std::vector<IndexRange> new_source_ranges;
+    for (const auto &source_range : source_ranges) {
+      for (const auto &mapped_range : interval.MapRange(source_range)) {
+        if (mapped_range.was_remapped_by_interval) {
+          destination_ranges.push_back(mapped_range);
+        } else {
+          new_source_ranges.push_back(mapped_range);
+        }
+      }
+    }
+    source_ranges = new_source_ranges;
+  }
+  for (auto &r : destination_ranges) {
+    r.was_remapped_by_interval = false;
+  }
+  destination_ranges.insert(destination_ranges.end(), source_ranges.begin(),
+                            source_ranges.end());
+  std::sort(destination_ranges.begin(), destination_ranges.end());
+  return destination_ranges;
+}
+
+std::vector<IndexRange> RangeTraverseCategories(
+    const IndexRange &initial_index_range, absl::string_view initial_category,
+    const absl::flat_hash_map<std::string, CategoryMapper> &mappers) {
+  std::vector<IndexRange> current_ranges = {initial_index_range};
+  std::string current_category = std::string(initial_category);
+
+  while (mappers.contains(current_category)) {
+    const auto &mapper = mappers.at(current_category);
+    std::vector<IndexRange> destination_ranges;
+    for (const auto &current_range : current_ranges) {
+      for (const auto &dest_range : mapper.MapRange(current_range)) {
+        destination_ranges.push_back(dest_range);
+      }
+    }
+    current_ranges = destination_ranges;
+    current_category = mapper.destination_category;
+  }
+  return current_ranges;
 }
 
 } // namespace day_5

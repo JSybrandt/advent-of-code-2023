@@ -13,9 +13,14 @@
 #include "src/day_5/util.h"
 
 using ::day_5::CategoryMapper;
+using ::day_5::IndexRange;
 using ::day_5::ParseCategoryMapper;
 using ::day_5::ParseSeedsAsIndependent;
+using ::day_5::ParseSeedsAsRanges;
+using ::day_5::RangeTraverseCategories;
 using ::day_5::TraverseCategories;
+
+static constexpr absl::string_view kInitialSource = "seed";
 
 int main(int argc, char **argv) {
   absl::ParseCommandLine(argc, argv);
@@ -53,9 +58,8 @@ int main(int argc, char **argv) {
   }
   maybe_add_mapper();
 
-  {
+  { // Part 1.
     std::vector<uint64_t> seeds = *ParseSeedsAsIndependent(serialized_seeds);
-    static constexpr absl::string_view kInitialSource = "seed";
     uint64_t smallest_location = std::numeric_limits<uint64_t>::max();
     for (const uint64_t seed_idx : seeds) {
       smallest_location =
@@ -63,6 +67,20 @@ int main(int argc, char **argv) {
                    TraverseCategories(seed_idx, kInitialSource, mappers));
     }
     std::cout << "Part 1: " << smallest_location << std::endl;
+  }
+
+  { // Part 2.
+    std::vector<IndexRange> seed_ranges = *ParseSeedsAsRanges(serialized_seeds);
+    uint64_t smallest_location = std::numeric_limits<uint64_t>::max();
+    for (const IndexRange &seed_range : seed_ranges) {
+      std::vector<IndexRange> location_ranges =
+          RangeTraverseCategories(seed_range, kInitialSource, mappers);
+      for (const auto &location_range : location_ranges) {
+        smallest_location =
+            std::min(smallest_location, location_range.range_start);
+      }
+    }
+    std::cout << "Part 2: " << smallest_location << std::endl;
   }
 
   return 0;
