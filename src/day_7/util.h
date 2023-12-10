@@ -17,6 +17,7 @@
 namespace day_7 {
 
 enum class CardValue {
+  JOKER = 1,
   TWO = 2,
   THREE = 3,
   FOUR = 4,
@@ -31,6 +32,7 @@ enum class CardValue {
   KING = 13,
   ACE = 14
 };
+std::ostream &operator<<(std::ostream &o, const CardValue hand);
 
 // A set of 5 cards.
 using HandOfCards = std::array<CardValue, 5>;
@@ -39,7 +41,7 @@ bool operator<(const HandOfCards &a, const HandOfCards &b);
 std::ostream &operator<<(std::ostream &o, const HandOfCards &hand);
 absl::StatusOr<HandOfCards> ParseHand(absl::string_view serialized_hand);
 
-enum class SetStrength {
+enum class HandType {
   HIGH_CARD,
   PAIR,
   TWO_PAIR,
@@ -49,15 +51,7 @@ enum class SetStrength {
   QUINTET
 };
 
-struct CardSet {
-  std::vector<CardValue> card_values;
-  SetStrength set_strength;
-  bool operator==(const CardSet &other) const;
-  bool operator<(const CardSet &other) const;
-};
-std::ostream &operator<<(std::ostream &o, const CardSet &card_set);
-
-std::vector<CardSet> ToOrderedCardSets(const HandOfCards &hand);
+HandType GetHandType(const HandOfCards &hand);
 
 struct HandAndBid {
   HandOfCards hand;
@@ -67,9 +61,12 @@ struct HandAndBid {
   }
   bool operator<(const HandAndBid &other) { return this->hand < other.hand; }
 };
+std::ostream &operator<<(std::ostream &o, const HandAndBid &hand_and_bid);
 
 absl::StatusOr<HandAndBid>
 ParseHandAndBid(absl::string_view serialized_hand_and_bid);
+
+HandOfCards ConvertJacksToJokers(const HandOfCards &hand);
 
 } // namespace day_7
 

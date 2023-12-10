@@ -15,80 +15,37 @@ using ::testing::ElementsAre;
 using ::testing::UnorderedElementsAre;
 
 TEST(DaySevenTest, ParseHandWorks) {
-  // Should sort output.
   EXPECT_THAT(*ParseHand("A2TQ4"),
-              ElementsAre(CardValue::TWO, CardValue::FOUR, CardValue::TEN,
-                          CardValue::QUEEN, CardValue::ACE));
+              ElementsAre(CardValue::ACE, CardValue::TWO, CardValue::TEN,
+                          CardValue::QUEEN, CardValue::FOUR));
 }
 
-TEST(DaySevenTest, ToOrderedCardSetsWorks) {
-  EXPECT_THAT(ToOrderedCardSets(*ParseHand("AAAAA")),
-              ElementsAre(CardSet{.card_values = {CardValue::ACE},
-                                  .set_strength = SetStrength::QUINTET}));
+TEST(DaySevenTest, GetBestCardSetWorks) {
+  EXPECT_EQ(GetHandType(*ParseHand("AAAAA")), HandType::QUINTET);
 
-  EXPECT_THAT(ToOrderedCardSets(*ParseHand("KK3KK")),
-              ElementsAre(CardSet{.card_values = {CardValue::KING},
-                                  .set_strength = SetStrength::QUARTET},
-                          CardSet{.card_values = {CardValue::THREE},
-                                  .set_strength = SetStrength::HIGH_CARD}));
+  EXPECT_EQ(GetHandType(*ParseHand("KK3KK")), HandType::QUARTET);
 
-  EXPECT_THAT(
-      ToOrderedCardSets(*ParseHand("QTQTT")),
-      ElementsAre(CardSet{.card_values = {CardValue::TEN, CardValue::QUEEN},
-                          .set_strength = SetStrength::FULL_HOUSE}));
+  EXPECT_EQ(GetHandType(*ParseHand("QTQTT")), HandType::FULL_HOUSE);
 
-  EXPECT_THAT(ToOrderedCardSets(*ParseHand("98979")),
-              ElementsAre(CardSet{.card_values = {CardValue::NINE},
-                                  .set_strength = SetStrength::TRIPLE},
-                          CardSet{.card_values = {CardValue::EIGHT},
-                                  .set_strength = SetStrength::HIGH_CARD},
-                          CardSet{.card_values = {CardValue::SEVEN},
-                                  .set_strength = SetStrength::HIGH_CARD}));
+  EXPECT_EQ(GetHandType(*ParseHand("98979")), HandType::TRIPLE);
 
-  EXPECT_THAT(
-      ToOrderedCardSets(*ParseHand("65454")),
-      ElementsAre(CardSet{.card_values = {CardValue::FIVE, CardValue::FOUR},
-                          .set_strength = SetStrength::TWO_PAIR},
-                  CardSet{.card_values = {CardValue::SIX},
-                          .set_strength = SetStrength::HIGH_CARD}));
+  EXPECT_EQ(GetHandType(*ParseHand("65454")), HandType::TWO_PAIR);
 
-  EXPECT_THAT(
-      ToOrderedCardSets(*ParseHand("33885")),
-      ElementsAre(CardSet{.card_values = {CardValue::EIGHT, CardValue::THREE},
-                          .set_strength = SetStrength::TWO_PAIR},
-                  CardSet{.card_values = {CardValue::FIVE},
-                          .set_strength = SetStrength::HIGH_CARD}));
+  EXPECT_EQ(GetHandType(*ParseHand("33885")), HandType::TWO_PAIR);
 
-  EXPECT_THAT(ToOrderedCardSets(*ParseHand("24335")),
-              ElementsAre(CardSet{.card_values = {CardValue::THREE},
-                                  .set_strength = SetStrength::PAIR},
-                          CardSet{.card_values = {CardValue::FIVE},
-                                  .set_strength = SetStrength::HIGH_CARD},
-                          CardSet{.card_values = {CardValue::FOUR},
-                                  .set_strength = SetStrength::HIGH_CARD},
-                          CardSet{.card_values = {CardValue::TWO},
-                                  .set_strength = SetStrength::HIGH_CARD}));
+  EXPECT_EQ(GetHandType(*ParseHand("24335")), HandType::PAIR);
 
-  EXPECT_THAT(ToOrderedCardSets(*ParseHand("6789T")),
-              ElementsAre(CardSet{.card_values = {CardValue::TEN},
-                                  .set_strength = SetStrength::HIGH_CARD},
-                          CardSet{.card_values = {CardValue::NINE},
-                                  .set_strength = SetStrength::HIGH_CARD},
-                          CardSet{.card_values = {CardValue::EIGHT},
-                                  .set_strength = SetStrength::HIGH_CARD},
-                          CardSet{.card_values = {CardValue::SEVEN},
-                                  .set_strength = SetStrength::HIGH_CARD},
-                          CardSet{.card_values = {CardValue::SIX},
-                                  .set_strength = SetStrength::HIGH_CARD}));
+  EXPECT_THAT(GetHandType(*ParseHand("6789T")), HandType::HIGH_CARD);
 }
 
 TEST(DaySevenTest, CardComparisonWorks) {
   EXPECT_TRUE(*ParseHand("23456") < *ParseHand("34567"));
-  EXPECT_TRUE(*ParseHand("TT234") < *ParseHand("345TT"));
+  // First-order tie.
+  EXPECT_TRUE(*ParseHand("345TT") < *ParseHand("TT234"));
   EXPECT_TRUE(*ParseHand("66666") < *ParseHand("77777"));
   EXPECT_TRUE(*ParseHand("55455") < *ParseHand("K5555"));
-  EXPECT_FALSE(*ParseHand("23456") < *ParseHand("65432"));
-  EXPECT_TRUE(*ParseHand("23456") == *ParseHand("65432"));
+  // First-order tie.
+  EXPECT_FALSE(*ParseHand("65432") < *ParseHand("23456"));
   EXPECT_TRUE(*ParseHand("TT998") < *ParseHand("TT99K"));
   EXPECT_TRUE(*ParseHand("TT998") < *ParseHand("TT99K"));
   EXPECT_TRUE(*ParseHand("TT998") < *ParseHand("TT999"));
@@ -100,8 +57,8 @@ TEST(DaySevenTest, CardComparisonWorks) {
 TEST(DaySevenTest, ParseHandAndBidWorks) {
   HandAndBid hand_and_bid = *ParseHandAndBid("32T3K 765");
   EXPECT_THAT(hand_and_bid.hand,
-              ElementsAre(CardValue::TWO, CardValue::THREE, CardValue::THREE,
-                          CardValue::TEN, CardValue::KING));
+              ElementsAre(CardValue::THREE, CardValue::TWO, CardValue::TEN,
+                          CardValue::THREE, CardValue::KING));
   EXPECT_EQ(hand_and_bid.bid, 765);
 }
 
@@ -111,11 +68,17 @@ TEST(DaySevenTest, SortHandAndBidWorks) {
       *ParseHandAndBid("32T3K 765"), *ParseHandAndBid("KTJJT 220"),
       *ParseHandAndBid("T55J5 684")};
   std::sort(hands.begin(), hands.end());
-  EXPECT_THAT(hands, ElementsAre(*ParseHandAndBid("233TK 765"),
-                                 *ParseHandAndBid("TTJJK 220"),
-                                 *ParseHandAndBid("677KK 28"),
-                                 *ParseHandAndBid("555TJ 684"),
-                                 *ParseHandAndBid("JQQQA 483")));
+  EXPECT_THAT(hands, ElementsAre(*ParseHandAndBid("32T3K 765"),
+                                 *ParseHandAndBid("KTJJT 220"),
+                                 *ParseHandAndBid("KK677 28"),
+                                 *ParseHandAndBid("T55J5 684"),
+                                 *ParseHandAndBid("QQQJA 483")));
+}
+
+TEST(DaySevenTest, ConvertToJokersWorks) {
+  EXPECT_THAT(ConvertJacksToJokers(*ParseHand("J2TJ4")),
+              ElementsAre(CardValue::JOKER, CardValue::TWO, CardValue::TEN,
+                          CardValue::JOKER, CardValue::FOUR));
 }
 
 } // namespace

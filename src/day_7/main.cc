@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/container/btree_map.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
@@ -13,7 +14,9 @@
 
 #include "src/day_7/util.h"
 
+using ::day_7::ConvertJacksToJokers;
 using ::day_7::HandAndBid;
+using ::day_7::HandOfCards;
 using ::day_7::ParseHandAndBid;
 
 int main(int argc, char **argv) {
@@ -35,6 +38,22 @@ int main(int argc, char **argv) {
       total += hand_rank * hands[idx].bid;
     }
     std::cout << "Part 1: " << total << std::endl;
+  }
+
+  { // Part 2.
+    for (auto &h : hands) {
+      h.hand = ConvertJacksToJokers(h.hand);
+    }
+
+    uint64_t total = 0;
+    std::sort(hands.begin(), hands.end());
+    for (size_t idx = 0; idx < hands.size(); ++idx) {
+      uint64_t hand_rank = idx + 1;
+      std::cout << "Hand: " << hands[idx].hand << " : " << hands[idx].bid
+                << " : " << hand_rank << std::endl;
+      total += hand_rank * hands[idx].bid;
+    }
+    std::cout << "Part 2: " << total << std::endl;
   }
 
   return 0;

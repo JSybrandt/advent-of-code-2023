@@ -7,8 +7,10 @@ cc_library(
     "@abseil-cpp//absl/status:statusor",
     "@abseil-cpp//absl/status:status",
     "@abseil-cpp//absl/container:flat_hash_map",
+    "@abseil-cpp//absl/container:btree",
     "@abseil-cpp//absl/container:flat_hash_set",
     "@abseil-cpp//absl/log:check",
+    "@abseil-cpp//absl/flags:flag",
   ],
 )
 
@@ -32,6 +34,7 @@ cc_binary(
     "@abseil-cpp//absl/flags:flag",
     "@abseil-cpp//absl/container:flat_hash_set",
     "@abseil-cpp//absl/flags:parse",
+    "@abseil-cpp//absl/container:btree",
   ],
 )
 

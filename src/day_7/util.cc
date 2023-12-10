@@ -18,125 +18,81 @@
 #include "absl/strings/string_view.h"
 
 namespace day_7 {
-
-bool CardSet::operator==(const CardSet &other) const {
-  return this->set_strength == other.set_strength &&
-         std::equal(this->card_values.begin(), this->card_values.end(),
-                    other.card_values.begin());
-}
-bool CardSet::operator<(const CardSet &other) const {
-  if (this->set_strength != other.set_strength) {
-    return this->set_strength < other.set_strength;
-  }
-  // Two sets with the same strength will have the same number of card_values.
-  CHECK_EQ(this->card_values.size(), other.card_values.size());
-  for (size_t idx = 0; idx < this->card_values.size(); ++idx) {
-    const auto &a = this->card_values[idx];
-    const auto &b = other.card_values[idx];
-    if (a != b) {
-      return a < b;
-    }
-  }
-  // Everything is equal.
-  return false;
-}
-
-bool operator<(const HandOfCards &a, const HandOfCards &b) {
-  std::vector<CardSet> a_sets = ToOrderedCardSets(a);
-  std::vector<CardSet> b_sets = ToOrderedCardSets(b);
-  for (size_t idx = 0; idx < std::min(a_sets.size(), b_sets.size()); ++idx) {
-    const auto &set_a = a_sets[idx];
-    const auto &set_b = b_sets[idx];
-    if (set_a != set_b) {
-      return set_a < set_b;
-    }
-  }
-  return false;
-}
-
 namespace {
-using CardCount = std::pair<CardValue, size_t>;
-bool SortCardCounts(const CardCount &a, const CardCount &b) {
-  if (a.second == b.second)
-    return a.first < b.first;
-  return a.second < b.second;
-}
+static const auto *kValueByCardChar = new absl::flat_hash_map<char, CardValue>{
+    {'A', CardValue::ACE},   {'K', CardValue::KING},  {'Q', CardValue::QUEEN},
+    {'J', CardValue::JACK},  {'T', CardValue::TEN},   {'9', CardValue::NINE},
+    {'8', CardValue::EIGHT}, {'7', CardValue::SEVEN}, {'6', CardValue::SIX},
+    {'5', CardValue::FIVE},  {'4', CardValue::FOUR},  {'3', CardValue::THREE},
+    {'2', CardValue::TWO},
+};
+
+static const auto *kCardCharByValue = new absl::flat_hash_map<CardValue, char>{
+    {CardValue::ACE, 'A'},   {CardValue::KING, 'K'},  {CardValue::QUEEN, 'Q'},
+    {CardValue::JACK, 'J'},  {CardValue::TEN, 'T'},   {CardValue::NINE, '9'},
+    {CardValue::EIGHT, '8'}, {CardValue::SEVEN, '7'}, {CardValue::SIX, '6'},
+    {CardValue::FIVE, '5'},  {CardValue::FOUR, '4'},  {CardValue::THREE, '3'},
+    {CardValue::TWO, '2'},   {CardValue::JOKER, 'J'}};
 } // namespace
 
-std::vector<CardSet> ToOrderedCardSets(const HandOfCards &hand) {
+bool operator<(const HandOfCards &a, const HandOfCards &b) {
+  const auto a_type = GetHandType(a);
+  const auto b_type = GetHandType(b);
+  // Only consider the first set.
+  if (a_type != b_type) {
+    return a_type < b_type;
+  }
+  // If equal, compare the cards in order.
+  for (size_t idx = 0; idx < a.size(); ++idx) {
+    if (a[idx] != b[idx]) {
+      return a[idx] < b[idx];
+    }
+  }
+  return false;
+}
+
+HandType GetHandType(const HandOfCards &hand) {
   absl::flat_hash_map<CardValue, size_t> card_counts;
   for (const auto &value : hand) {
     ++card_counts[value];
   }
-  std::vector<CardCount> ordered_card_counts = {card_counts.begin(),
-                                                card_counts.end()};
-  std::sort(ordered_card_counts.begin(), ordered_card_counts.end(),
-            &SortCardCounts);
-
-  std::vector<CardSet> card_sets;
-  while (!ordered_card_counts.empty()) {
-    const auto [current_value, current_count] = ordered_card_counts.back();
-    ordered_card_counts.pop_back();
-    // We want a one-set lookahead.
-    std::optional<CardValue> next_value;
-    std::optional<size_t> next_count;
-    if (!ordered_card_counts.empty()) {
-      next_value = ordered_card_counts.back().first;
-      next_count = ordered_card_counts.back().second;
-    }
-    switch (current_count) {
-    case 5:
-      card_sets.push_back({{current_value}, SetStrength::QUINTET});
-      break;
-    case 4:
-      card_sets.push_back({{current_value}, SetStrength::QUARTET});
-      break;
-    case 3:
-      if (next_count == 2) {
-        ordered_card_counts.pop_back(); // Pop the lookahead.
-        card_sets.push_back(
-            {{current_value, *next_value}, SetStrength::FULL_HOUSE});
-      } else {
-        card_sets.push_back({{current_value}, SetStrength::TRIPLE});
-      }
-      break;
-    case 2:
-      if (next_count == 2) {
-        ordered_card_counts.pop_back();
-        card_sets.push_back(
-            {{current_value, *next_value}, SetStrength::TWO_PAIR});
-      } else {
-        card_sets.push_back({{current_value}, SetStrength::PAIR});
-      }
-      break;
-    case 1:
-      card_sets.push_back({{current_value}, SetStrength::HIGH_CARD});
-      break;
-    default:
-      // This should never happen.
-      CHECK(false);
-      break;
-    }
+  // Remember and clear out the jokers.
+  const size_t joker_count = card_counts[CardValue::JOKER];
+  card_counts[CardValue::JOKER] = 0;
+  std::vector<size_t> ordered_card_counts;
+  for (const auto &[_, card_count] : card_counts) {
+    ordered_card_counts.push_back(card_count);
   }
-  return card_sets;
-}
+  std::sort(ordered_card_counts.begin(), ordered_card_counts.end());
 
-std::ostream &operator<<(std::ostream &o, const CardSet &card_set) {
-  o << "[" << absl::StrCat(card_set.set_strength) << "]: { ";
-  for (const auto &value : card_set.card_values) {
-    o << absl::StrCat(value) << " ";
+  switch (ordered_card_counts.back() + joker_count) {
+  case 5:
+    return HandType::QUINTET;
+  case 4:
+    return HandType::QUARTET;
+  case 3:
+    if (ordered_card_counts[ordered_card_counts.size() - 2] == 2) {
+      return HandType::FULL_HOUSE;
+    } else {
+      return HandType::TRIPLE;
+    }
+  case 2:
+    if (ordered_card_counts[ordered_card_counts.size() - 2] == 2) {
+      return HandType::TWO_PAIR;
+    } else {
+      return HandType::PAIR;
+    }
+    break;
+  case 1:
+    return HandType::HIGH_CARD;
+  default:
+    // This should never happen.
+    CHECK(false);
+    return HandType::HIGH_CARD;
   }
-  o << "}";
-  return o;
 }
 
 absl::StatusOr<HandOfCards> ParseHand(absl::string_view serialized_hand) {
-  static const auto *kCardValueMap = new absl::flat_hash_map<char, CardValue>{
-      {'A', CardValue::ACE},   {'K', CardValue::KING},  {'Q', CardValue::QUEEN},
-      {'J', CardValue::JACK},  {'T', CardValue::TEN},   {'9', CardValue::NINE},
-      {'8', CardValue::EIGHT}, {'7', CardValue::SEVEN}, {'6', CardValue::SIX},
-      {'5', CardValue::FIVE},  {'4', CardValue::FOUR},  {'3', CardValue::THREE},
-      {'2', CardValue::TWO}};
   HandOfCards result;
   if (serialized_hand.size() != result.size()) {
     return absl::InvalidArgumentError(
@@ -145,13 +101,12 @@ absl::StatusOr<HandOfCards> ParseHand(absl::string_view serialized_hand) {
   }
   for (size_t idx = 0; idx < serialized_hand.size(); ++idx) {
     const char c = serialized_hand[idx];
-    if (!kCardValueMap->contains(c)) {
+    if (!kValueByCardChar->contains(c)) {
       return absl::InvalidArgumentError(
           absl::StrCat("Invalid Hand. Contains bad card: ", serialized_hand));
     }
-    result[idx] = kCardValueMap->at(c);
+    result[idx] = kValueByCardChar->at(c);
   }
-  std::sort(result.begin(), result.end());
   return result;
 }
 
@@ -175,50 +130,34 @@ ParseHandAndBid(absl::string_view serialized_hand_and_bid) {
   return HandAndBid{*hand, bid};
 }
 
-std::ostream &operator<<(std::ostream &o, const HandOfCards &hand) {
-  for (const auto card : hand) {
-    switch (card) {
-    case CardValue::TWO:
-      o << "2";
-      break;
-    case CardValue::THREE:
-      o << "3";
-      break;
-    case CardValue::FOUR:
-      o << "4";
-      break;
-    case CardValue::FIVE:
-      o << "5";
-      break;
-    case CardValue::SIX:
-      o << "6";
-      break;
-    case CardValue::SEVEN:
-      o << "7";
-      break;
-    case CardValue::EIGHT:
-      o << "8";
-      break;
-    case CardValue::NINE:
-      o << "9";
-      break;
-    case CardValue::TEN:
-      o << "T";
-      break;
-    case CardValue::JACK:
-      o << "J";
-      break;
-    case CardValue::QUEEN:
-      o << "Q";
-      break;
-    case CardValue::KING:
-      o << "K";
-      break;
-    case CardValue::ACE:
-      o << "A";
-      break;
+HandOfCards ConvertJacksToJokers(const HandOfCards &hand) {
+  HandOfCards result = hand;
+  for (auto &c : result) {
+    if (c == CardValue::JACK) {
+      c = CardValue::JOKER;
     }
   }
+  return result;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Debug Logging ///////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+std::ostream &operator<<(std::ostream &o, const HandOfCards &hand) {
+  for (const auto card : hand) {
+    o << card;
+  }
+  return o;
+}
+
+std::ostream &operator<<(std::ostream &o, const CardValue card) {
+  o << kCardCharByValue->at(card);
+  return o;
+}
+
+std::ostream &operator<<(std::ostream &o, const HandAndBid &hand_and_bid) {
+  o << hand_and_bid.hand << ":" << hand_and_bid.bid;
   return o;
 }
 
