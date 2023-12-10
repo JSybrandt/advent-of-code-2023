@@ -11,6 +11,7 @@ cc_library(
     "@abseil-cpp//absl/container:flat_hash_set",
     "@abseil-cpp//absl/log:check",
     "@abseil-cpp//absl/flags:flag",
+    "@eigen",
   ],
 )
 
@@ -23,6 +24,7 @@ cc_test(
     "@googletest//:gtest_main",
     "@abseil-cpp//absl/container:flat_hash_set",
     "@abseil-cpp//absl/container:flat_hash_map",
+    "@eigen",
   ],
 )
 
@@ -35,6 +37,7 @@ cc_binary(
     "@abseil-cpp//absl/container:flat_hash_set",
     "@abseil-cpp//absl/flags:parse",
     "@abseil-cpp//absl/container:btree",
+    "@eigen",
   ],
 )
 

@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 
+#include "Eigen/Sparse"
 #include "absl/container/flat_hash_map.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/log/check.h"
@@ -44,6 +45,30 @@ Instructions ParseInstructions(absl::string_view serialized_directions);
 
 std::string Traverse(const Map &map, absl::string_view current_position,
                      Direction direction);
+
+struct MapIndex {
+  std::vector<std::string> name_by_idx;
+  absl::flat_hash_map<std::string, size_t> idx_by_name;
+  absl::flat_hash_set<size_t> sources;
+  absl::flat_hash_set<size_t> targets;
+};
+MapIndex IndexMap(const Map &map);
+
+struct TransitionMatrices {
+  // A square matrix. If row i column j is true, then you can transition from
+  // node i to j.
+  Eigen::SparseMatrix<bool> left, right;
+};
+TransitionMatrices ToTransitionMatrices(const Map &map, const MapIndex &index);
+
+// Row vectors that describe each source.
+Eigen::SparseMatrix<bool> GetInitialPositionMatrix(const MapIndex &index);
+
+// Column vector that describes that targets.
+Eigen::SparseVector<bool> GetTargetPositionVector(const MapIndex &index);
+
+bool CheckComplete(const Eigen::SparseMatrix<bool> &current_positions,
+                   const Eigen::SparseVector<bool> &targets);
 
 } // namespace day_8
 

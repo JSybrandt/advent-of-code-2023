@@ -14,11 +14,7 @@
 
 #include "src/day_8/util.h"
 
-using ::day_8::Instructions;
-using ::day_8::Map;
-using ::day_8::ParseInstructions;
-using ::day_8::ParseMap;
-using ::day_8::Traverse;
+using namespace day_8;
 
 int main(int argc, char **argv) {
   absl::ParseCommandLine(argc, argv);
@@ -35,9 +31,10 @@ int main(int argc, char **argv) {
     serialized_edges.push_back(edge);
   }
 
+  Map map = *ParseMap(serialized_edges);
+
   { // Part 1.
     Instructions instructions = ParseInstructions(serialized_instructions);
-    Map map = *ParseMap(serialized_edges);
 
     static constexpr absl::string_view kStartPosition = "AAA";
     static constexpr absl::string_view kTargetPosition = "ZZZ";
@@ -52,8 +49,27 @@ int main(int argc, char **argv) {
   }
 
   { // Part 2.
-    uint64_t total = 0;
-    std::cout << "Part 2: " << total << std::endl;
+    const MapIndex index = IndexMap(map);
+    const TransitionMatrices transitions = ToTransitionMatrices(map, index);
+    const Eigen::SparseVector<bool> targets = GetTargetPositionVector(index);
+    Eigen::SparseMatrix<bool> current_positions =
+        GetInitialPositionMatrix(index);
+
+    Instructions instructions = ParseInstructions(serialized_instructions);
+    uint64_t total_steps = 0;
+    while (!CheckComplete(current_positions, targets)) {
+      switch (instructions.next()) {
+      case Direction::LEFT:
+        current_positions = current_positions * transitions.left;
+        break;
+      case Direction::RIGHT:
+        current_positions = current_positions * transitions.right;
+        break;
+      }
+      ++total_steps;
+    }
+
+    std::cout << "Part 2: " << total_steps << std::endl;
   }
 
   return 0;

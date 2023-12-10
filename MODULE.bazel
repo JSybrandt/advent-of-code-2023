@@ -1,6 +1,7 @@
 # https://registry.bazel.build/
 bazel_dep(name = "abseil-cpp", version = "20230802.0")
 bazel_dep(name = "googletest", version = "1.14.0")
+bazel_dep(name = "eigen", version = "3.4.0")
 
 # Dev modules.
 
