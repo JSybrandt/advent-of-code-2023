@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <functional>
 #include <iostream>
 #include <limits>
 #include <math.h>
@@ -106,6 +107,88 @@ void PipeNetwork::BreadthFirstTraversal(
       }
     }
   }
+}
+
+PipeSegmentMask::PipeSegmentMask(const PipeNetwork &pipe_network) {
+  const size_t num_rows = pipe_network.grid.size();
+  const size_t num_cols = pipe_network.grid[0].size();
+  segments = std::vector<std::vector<int64_t>>(num_rows,
+                                               std::vector<int64_t>(num_cols));
+
+  const auto visit_all =
+      [&](const std::function<void(const Pos &pos)> &visit_fn) {
+        for (size_t row = 0; row < num_rows; ++row) {
+          for (size_t col = 0; col < num_cols; ++col) {
+            visit_fn({static_cast<int64_t>(row), static_cast<int64_t>(col)});
+          }
+        }
+      };
+
+  const auto get_segment = [&](const Pos &pos) -> int64_t & {
+    return segments[pos.row][pos.col];
+  };
+
+  // Start by giving each tile a unique segment value.
+  int64_t next_value = 1;
+  visit_all([&](const Pos &pos) { get_segment(pos) = next_value++; });
+
+  // Then, set all of the tiles in the main loop to -1.
+  pipe_network.BreadthFirstTraversal(
+      [&](const Pos &pos) { get_segment(pos) = kMainLoopSegement; });
+
+  const auto is_valid = [&](const Pos &p) -> bool {
+    return p.row >= 0 && p.col >= 0 && p.row < num_rows && p.col < num_cols;
+  };
+
+  const auto get_neighbor_segments =
+      [&](const Pos &pos) -> absl::flat_hash_set<int64_t> {
+    absl::flat_hash_set<int64_t> values;
+    for (const auto &dir : {kNorth, kSouth, kEast, kWest}) {
+      const Pos neigh = pos + dir;
+      if (is_valid(neigh)) {
+        values.insert(get_segment(neigh));
+      } else {
+        values.insert(kOutsideSegment);
+      }
+    }
+    return values;
+  };
+
+  const auto get_max_neighbor_segment_value = [&](const Pos &pos) -> int64_t {
+    const auto neigh_vals = get_neighbor_segments(pos);
+    return std::max(get_segment(pos),
+                    *std::max_element(neigh_vals.begin(), neigh_vals.end()));
+  };
+
+  // Then, set all non-pipe tiles to the max of its neighbors.
+  bool requires_another_pass = true;
+  while (requires_another_pass) {
+    requires_another_pass = false;
+    visit_all([&](const Pos &pos) {
+      auto &current_value = get_segment(pos);
+      // Ignore pipes!
+      if (current_value == kMainLoopSegement)
+        return;
+      const auto new_value = get_max_neighbor_segment_value(pos);
+      if (current_value != new_value) {
+        requires_another_pass = true;
+        current_value = new_value;
+      }
+    });
+  }
+
+  // Now, we can detect all of the borders.
+  visit_all([&](const Pos &pos) {
+    const int64_t curr_segment = get_segment(pos);
+    ++segment_sizes[curr_segment];
+    for (const auto neigh_segment : get_neighbor_segments(pos)) {
+      // No self loops.
+      if (neigh_segment == curr_segment)
+        continue;
+      segment_graph[curr_segment].insert(neigh_segment);
+      segment_graph[neigh_segment].insert(curr_segment);
+    }
+  });
 }
 
 } // namespace day_10

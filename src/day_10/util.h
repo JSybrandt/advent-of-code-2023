@@ -65,6 +65,17 @@ inline std::ostream &operator<<(std::ostream &o,
   return o;
 }
 
+constexpr int64_t kMainLoopSegement = -1;
+constexpr int64_t kOutsideSegment = -2;
+
+struct PipeSegmentMask {
+  PipeSegmentMask(const PipeNetwork &pipe_network);
+  std::vector<std::vector<int64_t>> segments;
+  // If X is in segment_graph[Y] then segment X borders Y.
+  absl::flat_hash_map<int64_t, absl::flat_hash_set<int64_t>> segment_graph;
+  absl::flat_hash_map<int64_t, uint64_t> segment_sizes;
+};
+
 } // namespace day_10
 
 #endif // SRC_DAY_10_UTIL_H_

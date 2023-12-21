@@ -55,5 +55,16 @@ int main(int argc, char **argv) {
     std::cout << "Part 1: " << max_distance << std::endl;
   }
 
+  { // Part 2.
+    PipeSegmentMask pipe_segment_mask(pipe_network);
+    uint64_t total = 0;
+    for (const auto &[segment, neighbors] : pipe_segment_mask.segment_graph) {
+      if (neighbors.size() == 1 && neighbors.contains(kMainLoopSegement)) {
+        total += pipe_segment_mask.segment_sizes.at(segment);
+      }
+    }
+    std::cout << "Part 2: " << total << std::endl;
+  }
+
   return 0;
 }

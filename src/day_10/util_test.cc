@@ -55,5 +55,34 @@ TEST(DayTenTest, TraverseNetworkWorks) {
                                    Pos{1, 3}, Pos{3, 2}, Pos{2, 3}, Pos{3, 3}));
 }
 
+TEST(DayTenTest, CreatePipeSegmentMaskWorks) {
+  PipeNetwork pipe_network({
+      /*     01234*/
+      /*0*/ ".....",
+      /*1*/ ".S-7.",
+      /*2*/ ".|.|.",
+      /*3*/ ".L-J.",
+      /*4*/ ".....",
+  });
+
+  PipeSegmentMask pipe_segment_mask(pipe_network);
+
+  EXPECT_THAT(pipe_segment_mask.segments,
+              ElementsAre(ElementsAre(25, 25, 25, 25, 25),
+                          ElementsAre(25, -1, -1, -1, 25),
+                          ElementsAre(25, -1, 13, -1, 25),
+                          ElementsAre(25, -1, -1, -1, 25),
+                          ElementsAre(25, 25, 25, 25, 25)));
+
+  EXPECT_THAT(pipe_segment_mask.segment_graph,
+              UnorderedElementsAre(Pair(-1, UnorderedElementsAre(13, 25)),
+                                   Pair(25, UnorderedElementsAre(-1, -2)),
+                                   Pair(13, UnorderedElementsAre(-1)),
+                                   Pair(-2, UnorderedElementsAre(25))));
+
+  EXPECT_THAT(pipe_segment_mask.segment_sizes,
+              UnorderedElementsAre(Pair(-1, 8), Pair(13, 1), Pair(25, 16)));
+}
+
 } // namespace
 } // namespace day_10
