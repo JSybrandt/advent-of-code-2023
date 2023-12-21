@@ -134,7 +134,7 @@ PipeSegmentMask::PipeSegmentMask(const PipeNetwork &pipe_network) {
 
   // Then, set all of the tiles in the main loop to -1.
   pipe_network.BreadthFirstTraversal(
-      [&](const Pos &pos) { get_segment(pos) = kMainLoopSegement; });
+      [&](const Pos &pos) { get_segment(pos) = kMainLoopSegment; });
 
   const auto is_valid = [&](const Pos &p) -> bool {
     return p.row >= 0 && p.col >= 0 && p.row < num_rows && p.col < num_cols;
@@ -167,7 +167,7 @@ PipeSegmentMask::PipeSegmentMask(const PipeNetwork &pipe_network) {
     visit_all([&](const Pos &pos) {
       auto &current_value = get_segment(pos);
       // Ignore pipes!
-      if (current_value == kMainLoopSegement)
+      if (current_value == kMainLoopSegment)
         return;
       const auto new_value = get_max_neighbor_segment_value(pos);
       if (current_value != new_value) {

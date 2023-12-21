@@ -65,7 +65,7 @@ inline std::ostream &operator<<(std::ostream &o,
   return o;
 }
 
-constexpr int64_t kMainLoopSegement = -1;
+constexpr int64_t kMainLoopSegment = -1;
 constexpr int64_t kOutsideSegment = -2;
 
 struct PipeSegmentMask {

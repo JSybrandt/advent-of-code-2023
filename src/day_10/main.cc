@@ -59,7 +59,7 @@ int main(int argc, char **argv) {
     PipeSegmentMask pipe_segment_mask(pipe_network);
     uint64_t total = 0;
     for (const auto &[segment, neighbors] : pipe_segment_mask.segment_graph) {
-      if (neighbors.size() == 1 && neighbors.contains(kMainLoopSegement)) {
+      if (neighbors.size() == 1 && neighbors.contains(kMainLoopSegment)) {
         total += pipe_segment_mask.segment_sizes.at(segment);
       }
     }
